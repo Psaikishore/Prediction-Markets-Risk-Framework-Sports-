@@ -1,0 +1,142 @@
+\subsection{Report of 28 October 2026: parlays}\label{sec:w1028}
+
+\textbf{Summary.} A parlay is a bet that two or more things all happen, for example ``Chiefs win and Eagles win''. It pays only if every leg wins. Since we can already price single-game contracts, the question this week was whether we can price parlays, and whether the probabilities we build ourselves are good enough to do it. We restricted ourselves to parlays on match winners (moneyline legs); spreads and totals come later. Two things were done: a historical test over eight seasons of what multiplying single-game probabilities gives, and a test on 854,296 Kalshi parlays from the first eight weeks of 2026 of how Kalshi prices them and how they settled.
+
+\subsubsection{How we thought about it}
+
+If the games in a parlay do not affect each other, the chance that all legs win is the product of the chances of each leg. So a parlay price has two ingredients: a probability for each game, and the assumption that the games are independent. We test both. For the single-game probability we compare four sources:
+\begin{enumerate}[nosep]
+\item \textbf{The closing line.} The sportsbook's moneyline just before kickoff, converted to a probability. A price of $-500$ means bet \$500 to win \$100, which implies a win chance of $500/600 = 83.3\%$. The two sides of a game add to more than 100\% because the book charges a fee; we scale them so they add to 100\% (``de-vigging'').
+\item \textbf{Our model, raw.} The two-output random forest predicts both teams' scores; placed on the empirical score grid (Section~\ref{sec:pricing}) this gives a win probability.
+\item \textbf{Our model, recalibrated.} The same probability corrected for how it did in past seasons (isotonic regression fitted on earlier seasons' out-of-sample predictions only, so nothing from the future is used).
+\item \textbf{Elo.} A rating built from wins and losses alone. Each team has a number; a win moves points from loser to winner, more for an upset. The gap between two ratings, plus a home-field allowance, converts to a win probability by $1/(1+10^{-\text{gap}/400})$.
+\end{enumerate}
+
+\subsubsection{Data}
+
+\paragraph{History.} Every regular-season game from 2018 to 2025 with a closing moneyline and an out-of-sample model prediction (2,219 games). Within each week we formed every pair of games with every choice of side (60,384 two-leg parlays), and random samples of three- and four-leg combinations (338,336 and 340,000). For each parlay we computed its probability under each source by multiplying, and recorded whether it hit.
+
+\paragraph{Kalshi.} Kalshi builds parlays on request as ``multivariate event'' markets: the user picks legs, the exchange creates a market that lists them, and it settles yes only if every leg does. These markets are not in the three game series we had been using. They live in ``cross-category'' series that close thousands of untraded quotes a minute, so they cannot be read in full; instead we read only the forty-minute windows around each NFL game's settlement, since a parlay closes within minutes of its last game (59 windows over the 2026 season). From about 13 million markets read, we kept those whose every leg is an NFL contract, 1.85 million in all, and for this report those whose every leg is a match winner: 854,296 markets holding 4.7 billion contracts, of which 20,367 (2.4\%) settled yes. People buy long parlays: the median has eight legs, only 7,062 have two and 25,026 three. Each market carries its legs, its last traded price and its volume. The fills themselves are not on the public trade tape; they appear in the hourly candlesticks, which cost one call per market, so we read them for a sample and otherwise take the fill to be at the market's creation hour and its last price. On 398 sampled regular-season markets, 61\% fill once, the first fill is in the creation hour about half the time (a median of two hours later otherwise), and the last price is the last fill 92\% of the time. For a market created before kickoff this is a fair pre-game price, except when its last trade came during the games, after some legs were decided; about 2\% of markets look like that, and they matter for one of the results below.
+
+\subsubsection{A worked example: week 10 of 2025}
+
+Table~\ref{tab:parlay_example} shows three games with the four probabilities and the result. Take ``Broncos win and Dolphins win''. The book gives $0.800\times0.213 = 0.171$; our raw model gives $0.792\times0.327 = 0.259$; Elo gives $0.852\times0.249 = 0.212$. Both teams won, so this parlay hit. ``Broncos win and Bills win'' was priced $0.800\times0.787 = 0.629$ by the book and $0.533$ by the model; Miami upset Buffalo, so it missed. Three games give three pairs and four side choices each, twelve parlays in all.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccccl}
+\toprule
+\textbf{Game} & \textbf{Moneylines} & \textbf{Book} & \textbf{Model} & \textbf{Elo} & \textbf{Result} \\
+\midrule
+Raiders at Broncos & DEN $-500$ / LV $+380$ & DEN 80.0\% & 79.2\% & 85.2\% & Broncos 10--7 \\
+Bills at Dolphins & MIA $+350$ / BUF $-455$ & MIA 21.3\% & 32.7\% & 24.9\% & Dolphins 30--13 \\
+Rams at 49ers & SF $+210$ / LA $-258$ & SF 30.9\% & 39.9\% & 42.3\% & Rams 42--26 \\
+\bottomrule
+\end{tabular}
+\caption{Home-team win probability from each source, week 10 of 2025. Our model gives the underdog more chance than the book in both games with a clear favourite.}
+\label{tab:parlay_example}
+\end{table}
+
+\paragraph{Two ways to score a probability.} The \emph{Brier score} is the average of (probability $-$ outcome)$^2$, with the outcome 1 if the parlay hit and 0 if not. For ``Broncos and Dolphins'' the book's penalty is $(1-0.171)^2 = 0.687$ and the model's $(1-0.259)^2 = 0.549$; for ``Broncos and Bills'' they are $0.629^2 = 0.396$ and $0.533^2 = 0.284$. Lower is better; always saying 50\% on a coin flip scores 0.25. The \emph{slope} asks a different question: when a source says 60\%, does it happen 60\% of the time? Group parlays by the probability they were given and plot the share that hit against the average probability; a slope of 1 means the source means what it says, above 1 means it is too cautious (its 60\% calls hit more than 60\%), below 1 means it is over-confident. On the twelve example parlays the Brier scores are 0.207 (book), 0.179 (model) and 0.207 (Elo): the model looks better in this one week because two underdogs won, which is exactly what one week cannot tell you.
+
+\subsubsection{Results over 2018--2025}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Two-leg parlays (60,384)} & \textbf{Brier} & \textbf{Slope} & \textbf{Both favourites: hit $-$ price} & \textbf{Both underdogs} \\
+\midrule
+Closing line, de-vigged & 0.166 & 1.03 & $-0.2$\textcent\ $\pm$ 1.7 & $-0.2$\textcent\ $\pm$ 0.8 \\
+Our model, raw & 0.173 & 1.16 & $+7.1$\textcent\ $\pm$ 1.5 & $-4.3$\textcent\ $\pm$ 0.7 \\
+Our model, recalibrated & 0.173 & 0.86 & $+3.7$\textcent\ $\pm$ 1.8 & $-2.2$\textcent\ $\pm$ 0.8 \\
+Elo & 0.173 & 0.90 & $+4.4$\textcent\ $\pm$ 1.6 & $-2.6$\textcent\ $\pm$ 0.7 \\
+\bottomrule
+\end{tabular}
+\caption{Parlay probabilities as the product of each source's single-game probabilities, scored against what happened. Standard errors are clustered by season because parlays in one season share games. Always saying the base rate would score 0.1875.}
+\label{tab:parlay_history}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{parlay_ml_history.png}
+\caption{Left: share of two-leg parlays that hit against the product of the leg probabilities, by source. Centre: distribution of parlay probabilities by number of legs; the median favourites-only parlay has probability 0.43 (2 legs), 0.28 (3) and 0.18 (4). Right: hit rate minus the book's product, by probability bucket.}
+\label{fig:parlay_history}
+\end{figure}
+
+Three things come out.
+\begin{enumerate}[nosep]
+\item \textbf{Multiplying the book's probabilities gives a fair parlay price.} The closing line's product is the most accurate and its slope is 1: a parlay it prices at 40\% hits about 40\% of the time, for favourites and underdogs alike.
+\item \textbf{The games are independent.} On the forest's out-of-sample residuals over 2010--2025, the correlation between games on the same date is $-0.005$ (14,426 pairs, standard error 0.008) and between games in the same week $-0.005$; for totals $-0.017$ and $-0.008$. Two home teams in the same week both win 29.5\% of the time against 30.0\% from the product. Multiplication is the right rule across games.
+\item \textbf{Our own probabilities are a little less accurate and biased in a known direction.} All three of our sources score about 0.173 against the book's 0.166. More important is how they are wrong: our model gives underdogs too much chance, so a parlay of two favourites that hits 44\% of the time is priced at 37\% by the raw model, and the gap doubles with each leg added. Recalibration halves the gap but does not close it, and Elo, which uses wins alone, behaves the same way. The fix is in the model, not in a correction after the fact: its distribution of margins is too wide for favourites, the same thing the fixed-threshold calibration of Section~\ref{sec:w1021} showed with a slope of 1.2.
+\end{enumerate}
+
+\subsubsection{Same-game legs}
+
+Two legs on the same game are not independent, and there the score grid is the model: the parlay's probability is the grid's mass on the intersection of the two legs' regions. Priced on the 2015--2025 grid, the premium over the product of marginals is under half a cent for winner-and-total or spread-and-total combinations (the margin and total of a game are nearly uncorrelated) but 10--25 cents when the legs overlap, such as ``home wins'' with ``home covers $-3$''. We leave same-game parlays for a later report.
+
+\subsubsection{How Kalshi prices parlays}
+
+For each parlay created before its first kickoff (87\% of them) we took the Kalshi price of every leg at the creation hour (the middle of the bid and ask), multiplied them, and compared the product with what the parlay sold for. We did the same with the product of the de-vigged closing moneylines and with the product of our grid's probabilities, the grid being tilted to the Kalshi-implied line at that hour.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Parlay price minus \ldots} & \textbf{Mean} & \textbf{Median} & \textbf{10th--90th pct} & \textbf{Within 2\textcent} \\
+\midrule
+Product of Kalshi leg prices & $+1.3$\textcent & $+0.1$\textcent & $-0.9$ to $+1.7$\textcent & 84\% \\
+Product of closing moneylines (de-vigged) & $+1.5$\textcent & & & \\
+Product of our grid's probabilities & $+1.7$\textcent & $+0.2$\textcent & $-0.6$ to $+3.0$\textcent & 81\% \\
+\bottomrule
+\end{tabular}
+\caption{694,835 cross-game winner parlays bought before kickoff, weeks 1--8 of 2026. The product of Kalshi's leg prices and the product of the closing moneylines agree with each other to 0.1\textcent.}
+\label{tab:parlay_kalshi_price}
+\end{table}
+
+\textbf{Kalshi prices a parlay as the product of its legs.} The typical gap is a tenth of a cent. The small positive average has a simple cause: a buyer pays the ask on every leg, and eight half-spreads of a cent each compound to about a cent on the parlay (a regression of the gap on the product and the number of legs gives an intercept of 2.9\textcent\ and $-0.2$\textcent\ per extra leg, longer parlays being cheaper). The wide tails come from the in-play last prices mentioned above. Our grid's product sits 0.4\textcent\ below the market's, because the model gives underdogs more chance than the market does, which lowers the price of the favourite-heavy parlays people buy.
+
+\subsubsection{How the Kalshi parlays settled}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Legs} & \textbf{Markets} & \textbf{Price paid} & \textbf{Product of leg prices} & \textbf{Our grid} & \textbf{Share that hit} \\
+\midrule
+2 & 6,438 & 30.0\% & 26.1\% & 25.9\% & 24.9\% \\
+3 & 23,144 & 19.0\% & 14.7\% & 14.0\% & 13.4\% \\
+4 & 55,058 & 12.1\% & 8.9\% & 8.2\% & 7.5\% \\
+5--6 & 184,500 & 6.7\% & 4.7\% & 4.2\% & 3.3\% \\
+7--8 & 130,565 & 3.5\% & 2.4\% & 2.0\% & 1.1\% \\
+9--12 & 204,857 & 1.1\% & 0.7\% & 0.5\% & 0.14\% \\
+13 or more & 95,429 & 0.24\% & 0.09\% & 0.06\% & 0.00\% \\
+\midrule
+All & 699,991 & 4.6\% & 3.4\% & 3.0\% & 2.4\% \\
+\bottomrule
+\end{tabular}
+\caption{Winner parlays bought before kickoff and settled, by number of legs: the average price paid, what the product of the leg prices and our grid said, and the share that settled yes. Over all parlays the price exceeds the hit rate by 2.3\textcent\ (95\% interval 1.8 to 2.7), the product of leg prices by 1.0\textcent\ (0.5 to 1.6) and the grid by 0.6\textcent\ (0.2 to 1.1); the intervals are from a bootstrap over game dates, since parlays in one week share games.}
+\label{tab:parlay_kalshi_settle}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{parlay_kalshi.png}
+\caption{Left: parlay price against the product of the Kalshi leg prices at creation, with the median and mean price in each 2-cent bin; the mass sits on the diagonal. Right: share of parlays that hit against what each source said, by bucket, on log scales; the product of leg prices and the grid run parallel to the diagonal and slightly below it, the price sits further below until the buckets above 35\textcent, which are filled by in-play last trades.}
+\label{fig:parlay_kalshi}
+\end{figure}
+
+Three things come out of Table~\ref{tab:parlay_kalshi_settle}.
+\begin{enumerate}[nosep]
+\item \textbf{Buyers pay about twice the realised frequency.} Parlays bought at an average of 4.6\textcent\ hit 2.4\% of the time. About a cent of the gap is the spread paid on the legs; the rest is that the legs themselves hit less often than priced this season.
+\item \textbf{Two-leg parlays settled as priced; long ones did not.} For two legs, the product of leg prices and the grid are within noise of the hit rate. The shortfall grows with the leg count, to a factor of five at 9--12 legs. The reason is compounding of a small error per leg: in weeks 1--7 of 2026 the favourite, priced at 64.7\% on average, won 63.2\% of games (106 games), and favourites priced above 70\% won 67\% against 77\% priced (30 games), whereas over 2018--2025 favourites won exactly as often as priced (66.6\% against 66.5\%, 2,119 games). A two-point shortfall per leg is one season's ordinary noise, but raised to the eighth power it is a 20--30\% shortfall on the parlay, and the hit rate fell short of the grid in six of the seven weeks. Seven weeks cannot say whether 2026 is unusual or whether parlay buyers pick overpriced legs; the eight-season history above says the product is calibrated across seasons, which favours the first reading.
+\item \textbf{Our grid was closer to the hit rate than the market this season.} This is the opposite of the history in Table~\ref{tab:parlay_history}, and for the same reason: the model gives favourites less chance than the market, and in these weeks favourites under-delivered. On the 186 markets whose fill time is known from the candles, so that the price is certainly pre-game, the grid's Brier score is 0.0150 against 0.0155 for the price paid. On the full set the price scores better (0.0145 against 0.0217), but that is the in-play last prices at work, not foresight.
+\end{enumerate}
+
+\subsubsection{Next steps}
+
+Narrow the model's margin distribution for favourites, since the direction of its error is now known from both the history and the market; extend the parlay tests to spread and total legs, where the same-game correlation premium matters; and read the candles for a larger sample so that fill times are exact.

@@ -1,0 +1,7 @@
+residual,pairs,corr,n_pairs,null_95_lo,null_95_hi,p_value
+favourite wins (1/0 minus its probability),same week,0.0052,20268,-0.0117,0.0153,0.444
+favourite wins (1/0 minus its probability),same kickoff slot,-0.0094,5633,-0.0236,0.0289,0.483
+favourite's margin minus spread,same week,0.0037,20268,-0.0127,0.0143,0.574
+favourite's margin minus spread,same kickoff slot,-0.0071,5633,-0.0245,0.0255,0.595
+total points minus total line,same week,-0.0102,20268,-0.0139,0.0135,0.145
+total points minus total line,same kickoff slot,-0.0091,5633,-0.0262,0.0256,0.485

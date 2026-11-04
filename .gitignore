@@ -7,3 +7,26 @@
 /.cursor/hooks.json.malformed-*
 /.github/hooks/hooks.json.malformed-*
 /.codex/hooks.json.malformed-*
+
+# Data and secrets
+/data/
+.env
+*.pem
+__pycache__/
+.ipynb_checkpoints/
+
+# LaTeX build artefacts and the professor's template copy
+reports/latex/*.aux
+reports/latex/*.bbl
+reports/latex/*.blg
+reports/latex/*.log
+reports/latex/*.out
+reports/latex/*.toc
+reports/latex/preview/
+reports/latex/overleaf/
+reports/latex/template/
+reports/latex/*.zip
+
+# OS and tool caches
+.DS_Store
+.pytest_cache/

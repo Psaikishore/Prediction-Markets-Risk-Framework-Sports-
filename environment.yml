@@ -1,0 +1,22 @@
+name: nfl
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pandas
+  - numpy
+  - pyarrow
+  - polars
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - requests
+  - pyyaml
+  - jupyter
+  - cryptography
+  - python-dotenv
+  - tqdm
+  - pip
+  - pip:
+      - nflreadpy

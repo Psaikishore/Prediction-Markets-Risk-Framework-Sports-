@@ -1,0 +1,53 @@
+\section{Risk Tools from Traditional Finance}\label{sec:tools}
+
+Traditional risk tools were built for instruments whose prices move continuously and have long histories. Sports prediction contracts pay exactly \$1 or \$0, last hours or days, and move in jumps. As a result the \emph{processes} of traditional risk management carry over, the \emph{measures} need adapting, and the \emph{statistical assumptions} no longer hold. Table~\ref{tab:tools} summarises our classification.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{2.6cm}p{5.2cm}p{6.2cm}}
+\toprule
+\textbf{Category} & \textbf{Tools} & \textbf{Why} \\
+\midrule
+Works as-is & Expected shortfall, scenario revaluation, SPAN margining, stress testing, limit frameworks, counterparty exposure & They work for any payoff shape. Because every possible outcome can be listed, they can be computed exactly. \\
+Needs adapting & Greeks, jump-to-default, basket correlation, netting, liquidity-adjusted risk, backtesting & The concepts are valid but must be reworked for binary, jump-driven payoffs, where dependence between contracts comes mostly from their structure rather than from statistics. \\
+Does not work & VaR as usually computed, covariance matrices, factor models, historical price simulation, continuous hedging & They assume smooth, normally distributed returns with long price histories, none of which exist here. \\
+New to prediction markets & Resolution-rule risk, cross-venue basis risk, integrity risk & These have no direct equivalent in traditional finance. \\
+\bottomrule
+\end{tabular}
+\caption{Traditional risk tools and how they transfer to binary sports contracts.}
+\label{tab:tools}
+\end{table}
+
+\subsection{Terms}
+
+\begin{description}[nosep,leftmargin=0pt,labelindent=0pt]
+\item[Value at Risk (VaR)] the loss that will not be exceeded at a given confidence level (e.g.\ 95\%). It ignores how large losses can be beyond that point.
+\item[Expected shortfall (ES)] the average loss in the worst outcomes beyond the VaR threshold, which captures the size of the tail.
+\item[Scenario revaluation] repricing every position under each possible scenario and adding up the profit and loss.
+\item[SPAN margining] setting collateral equal to the worst portfolio loss across a defined set of scenarios.
+\item[Stress testing] measuring losses under extreme but plausible events. \emph{Reverse} stress testing finds the events that would cause a given loss.
+\item[Greeks] sensitivities of a position's value. \emph{Delta} measures the response to price, \emph{gamma} how delta itself changes, and \emph{theta} the effect of time passing.
+\item[Basket correlation] risk in a product that depends on several events together (e.g.\ a parlay), driven by how those events are related.
+\item[Netting] offsetting gains and losses across related positions to find the true combined exposure.
+\item[Liquidity-adjusted risk] risk measured at the price one could actually exit at, rather than the mid-price.
+\item[Covariance matrix, factor model] statistical tools that estimate how assets move together from historical returns.
+\item[Counterparty exposure] potential loss if a counterparty or venue fails to pay.
+\item[Resolution-rule risk] loss from how a contract settles, e.g.\ voids, pushes, overtime or stat corrections.
+\item[Cross-venue basis risk] the ``same'' contract settling differently on two platforms.
+\item[Integrity risk] loss from insider information or match-fixing.
+\end{description}
+
+\subsection{Value at Risk}
+
+VaR answers one question: how much could I lose over a given period, at a given confidence level, under normal market conditions? Every VaR number has three parts: a loss amount, a time horizon and a confidence level. It is traditionally computed in one of three ways: parametrically, assuming a normal distribution of the underlying; by historical simulation; or by Monte Carlo. Its limitations are well known. It says nothing about the size of losses beyond the threshold, so two portfolios can have the same VaR while one loses ten times more in the worst 1\% of cases. It is not subadditive, so VaR$(A+B)$ can exceed VaR$(A)$ + VaR$(B)$, which makes diversification appear to increase risk; for this reason it is not a coherent risk measure in the sense of Artzner et al.~\cite{artzner1999}. And it relies on normal conditions, while correlations and volatilities shift sharply in a crisis.
+
+\subsection{VaR and expected shortfall for binary contracts}\label{sec:binaryvar}
+
+For a binary contract none of the three traditional computations is needed, because the loss distribution can be written down. A position of $q$ contracts bought at price $p$ pays $q(1-p)$ if the event occurs and loses $qp$ otherwise. If the true probability of the event is $\pi$, the profit-and-loss distribution has exactly two points. At confidence level $\alpha$,
+\[
+\mathrm{VaR}_\alpha = \begin{cases} qp & \text{if } 1-\pi > 1-\alpha,\\ 0 & \text{otherwise,}\end{cases}
+\qquad
+\mathrm{ES}_\alpha = \frac{qp\,\min(1-\pi,\,1-\alpha)}{1-\alpha}.
+\]
+So for a single contract the whole of risk measurement reduces to one number, $\pi$, which is also the fair price. For a portfolio of contracts on the same game the loss distribution is a sum over the joint outcomes of the game: with a probability table $p(h,a)$ over the final score, each position's payoff is a function of $(h,a)$, the portfolio profit and loss is their sum cell by cell, and VaR, ES, the worst case and the probability of loss are read directly from the resulting distribution with no simulation and no covariance matrix. This is the sense in which the pricing model and the risk model are the same object, and it is why the rest of this document is about building $p(h,a)$.

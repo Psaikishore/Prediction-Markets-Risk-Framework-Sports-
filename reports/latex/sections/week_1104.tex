@@ -1,0 +1,53 @@
+\subsection{Report of 4 November 2026: parlays}\label{sec:w1104}
+
+\textbf{Summary.} A parlay pays only if every leg settles yes. Legs on different games multiply if the games are independent; legs on the same game are regions of one score grid, and their joint probability is the grid's mass on the intersection. This week we tested both halves on Kalshi's parlay markets: whether games are independent, how large the same-game correlation premium is, whether Kalshi prices parlays at the product of their legs, and whether those prices settle at their stated probability. The pricing lives in \texttt{src/pmrisk/parlay.py}; the analysis in \texttt{scripts/parlay\_analysis.py}.
+
+\subsubsection{What Kalshi lists}
+
+Kalshi builds parlays on request as ``multivariate event'' markets: a user picks legs, the exchange creates a market whose \texttt{mve\_selected\_legs} field names each leg's market and side, and the market settles yes only if every leg does. Nearly every such market is a quote that is never traded, and the series that carries them closes thousands of markets a minute, so it cannot be paged in full. Parlays settle within minutes of their last leg's game, so we paged only the windows around each NFL game's settlement (59 windows over the 2026 season) and kept the markets whose legs are all NFL winner, spread or total contracts. Their fills are not on the public trade tape, but the hourly candlesticks record them: an hour with volume carries the fill price. PLACEHOLDER\_INVENTORY
+
+\subsubsection{Across games: independence holds}
+
+If games on the same day shared a common shock, the forest's residuals would be correlated between them. Over 4,363 out-of-sample games (2010--2025) the pairwise correlation of margin residuals between games on the same date is $-0.005$ (14,426 pairs, standard error 0.008) and between games in the same week $-0.005$ (20,680 pairs); for totals $-0.017$ and $-0.008$; against the closing line rather than the forest, $-0.008$ to $-0.015$. None is distinguishable from zero. The joint frequencies agree: for two games in the same week, both home teams win 29.5\% of the time against 30.0\% from the product of the marginals, both cover 23.6\% against 24.0\%, both go over 23.9\% against 23.9\%. Multiplying leg probabilities across games is the right rule.
+
+\subsubsection{Within a game: the correlation premium}
+
+Table~\ref{tab:sgp} prices the standard two-leg combinations on the 2015--2025 grid tilted to each line (total 44.5). The premium is the joint probability minus the product of the two marginals.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+\textbf{Combination} & \textbf{home $-10$} & $-7$ & $-3$ & \textbf{pick} & $+3$ & $+7$ & $+10$ \\
+\midrule
+Home ML \& over & $-0.4$ & $-0.3$ & $-0.2$ & $-0.1$ & $0.0$ & $+0.2$ & $+0.3$ \\
+Home covers \& over & $-1.1$ & $-0.3$ & $-0.1$ & $-0.1$ & $-0.2$ & $+0.1$ & $+0.2$ \\
+Home ML \& home covers & 10.9 & 13.3 & 19.2 & 24.8 & 22.5 & 15.5 & 12.0 \\
+Home $-3.5$ \& home $-10.5$ & 5.1 & 7.1 & 10.1 & 12.4 & 14.4 & 15.9 & 16.0 \\
+\bottomrule
+\end{tabular}
+\caption{Same-game correlation premium in cents (joint probability minus product of marginals) on the grid tilted to each home spread, total 44.5.}
+\label{tab:sgp}
+\end{table}
+
+Winner-and-total and spread-and-total combinations are nearly independent: the premium is under half a cent across the range of lines, with the sign the folklore predicts (a favourite winning goes with more scoring) but a magnitude no one could trade, because the historical margin--total correlation is only 0.03. The premium lives in nested legs: ``home wins'' and ``home covers $-3$'' are one event inside another, and the product understates the joint by 10--25 cents; the same for two strikes on one ladder. A rule that multiplies will misprice any same-game parlay whose legs overlap. History agrees with the grid within noise: over 2015--2025, by size of the favourite, the realised premium of ``home wins \& over'' and ``home covers \& over'' ranges from $-0.5$ to $+1.4$ cents (standard error about 1.8 cents per bucket) against the grid's $-0.3$ to $+0.2$.
+
+\subsubsection{Kalshi's parlay prices}
+
+PLACEHOLDER\_MARKET
+
+\subsubsection{Settlement}
+
+PLACEHOLDER\_SETTLEMENT
+
+\subsubsection{A book netted on the grid}
+
+A parlay is a position on the joint grid of its games, so a book of parlays and single legs nets on that grid exactly. On game A (home $-3$, total 44.5) and game B (home $-7$, total 48.5) we hold 1,000 of the cross-game parlay ``A away \& B home'', 1,000 of the same-game parlay ``A away \& over 44.5'' and 500 of ``B home $-6.5$ \& over 48.5'', hedged with short positions in the four single legs (700 A-away, 400 B-home, 500 A-over, 300 B-over), all priced at the grid's fair value. The legs partition each game's grid into regions on which every payoff is constant (24 joint classes for the two games), so the settlement distribution is an exact sum. The book's 99\% expected shortfall is \$924 against \$1,624 if each line's tail loss is added on its own (Figure~\ref{fig:parlay_settle}): the parlays and their hedging legs lose in different states, and only the joint distribution sees it. This is the netting goal of the engine, with no covariance matrix: the dependence between a parlay and its own legs is structural and is read off the grid.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{parlay_settlement.png}
+\caption{Left: settled Kalshi parlays, share settled yes by fill price (circles) and by grid fair value (squares), bin sizes shown. Right: exact settlement P\&L distribution of the example book on two games, with its 99\% VaR.}
+\label{fig:parlay_settle}
+\end{figure}

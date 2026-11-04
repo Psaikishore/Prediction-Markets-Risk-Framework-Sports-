@@ -1,0 +1,24 @@
+\section{Introduction}
+
+Prediction markets have moved from a niche into the mainstream. On Kalshi alone the three main contract types on a single NFL week (game winner, point spread, game total) traded close to two billion contracts over the first three weeks of the 2026 season, and the Super Bowl winner market carries over a hundred million contracts of open interest. In this document we explore how the methods of traditional financial risk management apply to such markets and build a risk engine for them, \aname.
+
+The goals of the engine are:
+\begin{enumerate}[nosep]
+\item compute security-level and portfolio-level risk;
+\item in computing portfolio risk, add or net exposures according to the defined behaviour of the assets (netting through correlation, or, as we argue below, through a joint outcome model);
+\item produce metrics that show what a book would actually do when the market moves;
+\item at a later stage, support margin, collateral and leverage calculations;
+\item identify cross-market hedging opportunities that allow more balanced products and portfolios.
+\end{enumerate}
+
+\subsection{Contributions so far}
+
+This document is a research record: each weekly report adds a section, and earlier sections are revised as the project develops. The contributions to date are:
+\begin{enumerate}[nosep]
+\item a classification of traditional risk tools into those that carry over to binary contracts unchanged, those that need adapting, and those that do not apply (Section~\ref{sec:tools});
+\item the observation, developed in Section~\ref{sec:pricing}, that for a binary contract the price is the outcome probability and therefore the full profit-and-loss distribution, so a pricing model and a settlement-risk model are the same object, and that a joint model over the final score is what allows netting across contracts on the same game;
+\item an empirical score distribution for NFL games that preserves the discrete structure of football scoring and prices every Kalshi contract on a game to within a cent of the live order book (Section~\ref{sec:pricing});
+\item a literature survey of NFL score prediction and market efficiency (Section~\ref{sec:literature});
+\item a leak-free pre-game feature table of 7,548 games and 805 columns, with a perturbation test for leakage (Section~\ref{sec:data});
+\item a two-output random forest predicting both teams' scores, evaluated walk-forward over sixteen seasons against Elo and the closing line, with its residual structure, an ensemble test against public forecasts, and full outcome distributions compared with the Vegas lines (Section~\ref{sec:scoremodel}).
+\end{enumerate}

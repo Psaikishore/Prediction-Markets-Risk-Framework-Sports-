@@ -1,0 +1,42 @@
+% Record of Prof. Amine's comments on the 21 October 2026 report and the fixes made (28 October 2026).
+% The same blocks are embedded in the section files named below, next to the text they refer to.
+
+% sections/idea.tex
+{\color{red}\textbf{Amine comment:} Please distinguish the model's outcome probabilities from market prices. Treating them as equal requires assumptions beyond accounting for fees and spreads. I believe matching prices alone does not show that the probabilities accurately describe future outcomes.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph below now separates the market price $p$ from the model probability $\pi$, lists the assumptions under which they coincide, and states that outcome accuracy is judged only against results (Sections~\ref{sec:scoremodel} and~\ref{sec:w1021}), with price matching read as consistency with the market, not correctness.}
+
+% sections/idea.tex
+{\color{red}\textbf{Amine comment:} Fitting spread and total prices does not establish how margin and total behave together.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph below states that the ladders identify only the two marginals and that the dependence between margin and total is an assumption carried by the historical prior (parity, correlation 0.03, conditional widening), untestable against listed contracts.}
+
+% sections/idea.tex
+{\color{red}\textbf{Amine comment:} Please define loss explicitly. The formulas treat gains as zero; I believe defining loss as minus profit can give different VaR and expected shortfall values?}
+
+{\color{blue}\textbf{Sai comment:} Fixed. Loss is now defined as $L=-\text{P\&L}$ and the VaR and ES formulas above are the signed-loss versions; the text notes where the earlier truncated-at-zero formulas differed (VaR of $0$ instead of $-q(1-p)$, and ES overstated by $(\pi-\alpha)\,q(1-p)/(1-\alpha)$, when $\pi>\alpha$).}
+
+% sections/data.tex
+{\color{red}\textbf{Amine comment:} Could you please state when forecasts are made and confirm that weather, starting-quarterback and injury information was available by then. Changing game statistics does not test when these other inputs became known.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph below fixes the forecast time at kickoff and goes through each input: the starting quarterback is the recorded starter (known 90 minutes before kickoff), injuries come from the timestamped final report, and weather is the observed conditions; refitting without the weather columns changes the margin error by 0.001 points (Section~\ref{sec:scoremodel}).}
+
+% sections/week_0930.tex
+{\color{red}\textbf{Amine comment:} Could a possible score pair receive zero probability simply because it is absent from the historical sample? How such outcomes are handled and how smoothing affects extreme-outcome probabilities and expected shortfall.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph and Table~\ref{tab:smoothing} below quantify it: 19--31\% of a season's games land on an unseen exact pair, the 2\% pseudo-count fills every cell whose two scores have been seen, and moving it from 0 to 10\% shifts tail probabilities by hundredths of a point and a deep strike's ES$_{99}$ by under 0.5\%.}
+
+% sections/week_1007.tex
+{\color{red}\textbf{Amine comment:} Please report uncertainty for the differences in error on the same games, allowing for dependence over time, and clarify forecast timing relative to the closing line. The table shows gains over Elo of 0.03--0.04 points, not a quarter point.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The ``quarter of a point'' is corrected to 0.03--0.04 above; the paragraph and Table~\ref{tab:mae_diff} below give paired error differences with i.i.d., week-clustered, season-clustered and Newey--West standard errors (gain over Elo about one standard error; gap to the line seven to eight), and state that model and line are both taken at kickoff.}
+
+% sections/week_1007.tex
+{\color{red}\textbf{Amine comment:} Please confirm that residual covariance and the empirical grid use only earlier games in each test fold. Their stated estimation periods overlap the evaluation years.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The grid prior was already fold-wise (all games before the test season). The residual covariance was pooled; it is now refit walk-forward from seasons before each test season, as the paragraph above reports (Brier 0.2208 fold-wise against 0.2207 pooled), and the pooled table and figure are labelled as descriptive.}
+
+% sections/week_1021.tex
+{\color{red}\textbf{Amine comment:} Please clarify how calibration is done. When the model predicts a 65\% chance of covering, the observed rate is about 52\%. Please also test fixed thresholds chosen in advance, separately from thresholds set by the market.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph ``How the calibration is measured'' above states the procedure. The paragraph ``Thresholds fixed in advance'' below, with Table~\ref{tab:fixedcal} and Figure~\ref{fig:fixedcal}, tests seven pre-chosen events: the model has 8--11\% Brier skill on margin events and 3--4\% on totals with slopes 1.13--1.27, against slopes of 0.06--0.11 at the market's thresholds.}

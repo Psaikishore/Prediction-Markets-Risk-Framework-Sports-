@@ -1,0 +1,78 @@
+%=================================================================
+% RiskPredictor: a risk engine for sports prediction markets
+% Built on Prof. Shasha's MDPI Forecasting template (Definitions/mdpi.cls).
+% Compile: pdflatex riskpredictor; bibtex riskpredictor; pdflatex riskpredictor; pdflatex riskpredictor
+%=================================================================
+\documentclass[forecasting,article,accept,pdftex,moreauthors]{Definitions/mdpi}
+
+\usepackage{verbatim}
+\usepackage{makecell}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{comment}
+\usepackage{enumitem}
+\graphicspath{{figures/}}
+\newcommand{\aname}{{{\it RiskPredictor}}}
+
+%=================================================================
+% MDPI internal commands - do not modify
+\firstpage{1}
+\makeatletter
+\setcounter{page}{\@firstpage}
+\makeatother
+\pubvolume{1}
+\issuenum{1}
+\articlenumber{0}
+\pubyear{2026}
+\copyrightyear{2026}
+\externaleditor{Academic Editor(s): Name}
+\datereceived{ }
+\daterevised{ }
+\dateaccepted{ }
+\datepublished{ }
+\hreflink{https://doi.org/}
+
+%=================================================================
+\Title{\aname: Pricing and Risk for Sports Prediction Markets}
+\TitleCitation{\aname: Pricing and Risk for Sports Prediction Markets}
+
+\newcommand{\orcidauthorA}{0000-0002-7036-3312}
+
+\Author{Sai Kishore Pathakamuri $^{1,\dagger}$ and Dennis Shasha $^{2,}$*\orcidA{}}
+\AuthorNames{Sai Kishore Pathakamuri and Dennis Shasha}
+\AuthorCitation{Pathakamuri, S.K.; Shasha, D.}
+
+\address{%
+$^{1}$ \quad Department of Finance and Risk Engineering, NYU Tandon School of Engineering, 6 MetroTech Center, Brooklyn, NY 11201 USA; sp8744@nyu.edu\\
+$^{2}$ \quad Courant Institute of Mathematical Sciences, 251 Mercer Street, New York, NY 10012 USA; des1@nyu.edu}
+
+\corres{Correspondence: des1@nyu.edu}
+
+\abstract{Prediction markets on sporting events now trade billions of contracts a season, yet the risk tools of traditional finance assume continuous prices and long histories that binary, short-lived contracts do not have. We set out to build a risk engine for such markets and argue that its core is a probability model of game outcomes: a contract's price is a probability, so pricing and settlement risk are the same calculation, and a joint model over the final score prices every contract on a game consistently and lets risk net across them. We survey the literature on predicting NFL games, build a leak-free table of 759 pre-game features for 7,548 games (1999--2026), and fit a two-output random forest that predicts both teams' scores. Evaluated walk-forward over sixteen seasons, it predicts the margin with a mean absolute error of 10.35 points against 10.38 for Elo and 10.05 for the Vegas closing line, matching the published literature. Its score predictions are calibrated, its residuals are uncorrelated with standard deviations of 9.6 and 9.4 points, and, placed on an empirical score grid that preserves the NFL's key-number spikes, they price the full ladder of spread and total contracts to within a cent of the Kalshi order book. Ensembles with public forecasts do not beat the closing line. We conclude that the engine's value lies in a calibrated joint distribution rather than a better point forecast, and set out the next steps.}
+
+\keyword{prediction markets; sports betting; risk management; random forests; expected shortfall; Kalshi; NFL; score prediction}
+
+\begin{document}
+
+\input{sections/01_introduction}
+\input{sections/02_risk_tools}
+\input{sections/03_data}
+\input{sections/04_pricing_as_probability}
+\input{sections/05_literature}
+\input{sections/06_score_model}
+\input{sections/07_conclusions}
+
+\vspace{6pt}
+\authorcontributions{Conceptualization: D.S. and S.K.P.; methodology, software, data curation, analysis and writing: S.K.P.; supervision and review: D.S.}
+\funding{This research received no external funding.}
+\dataavailability{Data are from the public nflverse project and the Kalshi API; code is in the project repository.}
+\conflictsofinterest{The authors declare no conflict of interest.}
+
+\reftitle{References}
+\bibliography{riskpredictor}
+
+\PublishersNote{}
+\end{document}

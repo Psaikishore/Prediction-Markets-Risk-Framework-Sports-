@@ -1,0 +1,5 @@
+event,weeks,dispersion,null_95_lo,null_95_hi,p_value_bunching
+"favourite loses, 2015-2025",192,1.065,0.8185,1.2069,0.262
+"favourite fails to cover, 2015-2025",192,0.902,0.8225,1.2075,0.839
+"game goes over, 2015-2025",192,1.014,0.8232,1.1968,0.445
+"favourite loses, 2026",7,0.395,0.2622,2.1785,0.913

@@ -1,0 +1,27 @@
+\section{Conclusions and Next Steps}
+
+\subsection{What we have learned}
+\begin{enumerate}[nosep]
+\item For a binary contract, price, probability and the profit-and-loss distribution are the same thing; for a portfolio on one game, a joint distribution over the final score is the risk model. VaR and expected shortfall are then exact sums, with no covariance matrix or simulation.
+\item The NFL score distribution is discrete in ways that matter for pricing: 3-point margins are 2.9 times as likely as a normal model says, and margin and total always share parity. An empirical score grid, repositioned by exponential tilting, prices a game's whole ladder of contracts to within a cent of the Kalshi order book once the dispersion is calibrated.
+\item Point accuracy is capped near the Vegas closing line. Our two-output random forest, a linear model, Elo, a public Elo variant and every stack of them sit 0.1 to 0.4 points behind the line, as the literature has found since 1980. The forest and the linear model tie, so with 7,000 games the information is in the features, and the features are mostly ratings.
+\item The forest's two score predictions are calibrated, and their residuals are uncorrelated with standard deviations near 9.5 points that rise with the level of scoring. Those are the parameters needed to turn two predicted scores into a probability for any outcome.
+\item The resulting cover and over probabilities are calibrated for outcomes the market has not priced but carry no information about which side of the Vegas number will hit. The engine's value is in pricing the whole distribution consistently, not in picking sides against the market.
+\item Leakage is the dominant risk in this kind of work and is easy to introduce from a well-maintained public dataset. A perturbation test and a sanity check against the literature's error levels are both needed.
+\end{enumerate}
+
+\subsection{Next steps}
+\begin{enumerate}[nosep]
+\item \textbf{Probabilistic head.} A model that predicts $(\mu_h,\mu_a,\sigma_h,\sigma_a,\rho)$ per game, trained on the bivariate negative log-likelihood, and used to position and scale the empirical grid. The toy example shows a dispersion parameter removes the remaining tail error.
+\item \textbf{Remaining suggested methods} on the same feature table: LARS for a sparse linear model, gradient boosting, PCA and UMAP as exploration, and a cascade-correlation network as a final comparison.
+\item \textbf{Offence and defence ratings} in the Glickman and Stern~\cite{glickmanstern1998} state-space form, so each predicted score has its own strength input rather than a single Elo; recency weighting for the scoring environment; a stadium lookup for travel distance.
+\item \textbf{Risk layer.} Represent a book of Kalshi positions as a payoff vector on the score grid; compute ES, worst cell and probability of loss exactly; measure in-play jump risk from the trade tape, where hourly price changes are 17 cents against 1 cent pre-game; add the quoted-spread curve (which scales with $p(1-p)$, not with strike distance) as the liquidation cost.
+\item \textbf{Live record.} Update weekly through the 2026 season: new games, new Kalshi prices, re-run the walk-forward, accumulate out-of-sample forecasts against the market.
+\end{enumerate}
+
+\subsection{Research log}
+\begin{description}[nosep,leftmargin=0pt,labelindent=0pt]
+\item[30 September 2026] Framed pricing as outcome modelling; surveyed the sports-pricing literature; pulled Kalshi markets, trades and candlesticks and nflverse results; exploratory analysis of the score distribution and of Kalshi liquidity; worked example of the tilted empirical grid against a live order book.
+\item[7 October 2026] Literature survey of NFL prediction and market efficiency; catalogue of data used in the literature against what nflverse provides; built the 805-column feature table with the leakage test; first two-output random forest, walk-forward results, bivariate residual structure.
+\item[21 October 2026] Follow-ups from Professor Shasha: ensemble and stacking test with public forecasts and the opening line; full margin and total distributions compared with the Vegas lines; cover and over calibration.
+\end{description}

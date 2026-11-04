@@ -1,0 +1,111 @@
+\section{The idea}\label{sec:idea}
+
+
+Prediction markets have moved from a niche into the mainstream. On Kalshi alone the three main contract types on a single NFL week (game winner, point spread, game total) traded close to two billion contracts over the first three weeks of the 2026 season, and the Super Bowl winner market carries over a hundred million contracts of open interest. In this document we explore how the methods of traditional financial risk management apply to such markets and build a risk engine for them, \aname.
+
+The goals of the engine are:
+\begin{enumerate}[nosep]
+\item compute security-level and portfolio-level risk;
+\item in computing portfolio risk, add or net exposures according to the defined behaviour of the assets (netting through correlation, or, as we argue below, through a joint outcome model);
+\item produce metrics that show what a book would actually do when the market moves;
+\item at a later stage, support margin, collateral and leverage calculations;
+\item identify cross-market hedging opportunities that allow more balanced products and portfolios.
+\end{enumerate}
+
+\subsection{A contract's price is a probability, so pricing and risk are one model}\label{sec:pricing}
+
+
+A binary contract pays \$1 or nothing, so its fair value under any probability assessment $\pi$ of the outcome is $\pi$ dollars, and with only two outcomes that probability \emph{is} the full profit-and-loss distribution (Section~\ref{sec:binaryvar}). Pricing and settlement risk are therefore the same calculation. For a portfolio, the pricing model must be a joint one, because the joint probabilities are what allow risk to net across positions.
+
+{\color{red}\textbf{Amine comment:} Please distinguish the model's outcome probabilities from market prices. Treating them as equal requires assumptions beyond accounting for fees and spreads. I believe matching prices alone does not show that the probabilities accurately describe future outcomes.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph below now separates the market price $p$ from the model probability $\pi$, lists the assumptions under which they coincide, and states that outcome accuracy is judged only against results (Sections~\ref{sec:scoremodel} and~\ref{sec:w1021}), with price matching read as consistency with the market, not correctness.}
+
+Two probabilities appear in this document and we keep them apart. The \emph{market price} $p$ of a contract is what the exchange's order book shows, net of fee and spread. The \emph{model probability} $\pi$ is our estimate of the chance the outcome occurs. The two coincide only under assumptions that go beyond fees: that the marginal trader is risk-neutral and uninformed traders' flow is absorbed without moving the price, and that the market is efficient in the sense that its price already uses all public information. Levitt~\cite{levitt2004} shows that sportsbooks deliberately set prices away from their own probabilities to exploit bettor biases, so even an informed price need not equal its setter's probability. We therefore use market prices for two purposes only: as a benchmark that any model must be compared with, and as the mark at which a position is valued before settlement. Whether model probabilities describe future outcomes is a separate question, answered only by comparing them with what happened: the calibration plots and Brier scores of Sections~\ref{sec:scoremodel} and~\ref{sec:w1021} do that, and the market's own prices are held to the same test in Figure~\ref{fig:kalshi_cal}. Matching Kalshi's prices, as in the worked example of Section~\ref{sec:w0930}, shows that a model is consistent with the market, not that either is right.
+
+A proper joint outcome model, such as a distribution over the final score of a game, gives everything in Table~\ref{tab:joint_uses} at once.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{6.5cm}p{6.5cm}}
+\toprule
+\textbf{Output} & \textbf{Used for} \\
+\midrule
+Fair price of every contract on the game & Pricing \\
+Probability of each outcome state & ES, probability of loss, expected loss \\
+Joint behaviour of contracts on the same game & Netting (goal 2 of the engine) \\
+Consistent prices across winner, spread, total and props & Detecting mispricing between related contracts \\
+\bottomrule
+\end{tabular}
+\caption{What a joint outcome model provides.}
+\label{tab:joint_uses}
+\end{table}
+
+Every Kalshi contract on a game is a region of the final-score grid. With $h$ and $a$ the home and away scores, the winner contract pays when $h-a>0$ (ties settle at \$0.50), a spread contract at strike $k$ pays when $h-a>k$, and a total contract pays when $h+a>k$. One probability table $p(h,a)$ prices all of them by summing cells, and a book of positions is a payoff vector over the same grid.
+
+{\color{red}\textbf{Amine comment:} Fitting spread and total prices does not establish how margin and total behave together.}
+
+{\color{blue}\textbf{Sai comment:} Fixed. The paragraph below states that the ladders identify only the two marginals and that the dependence between margin and total is an assumption carried by the historical prior (parity, correlation 0.03, conditional widening), untestable against listed contracts.}
+
+The listed contracts do not, however, identify the whole table. Every winner and spread contract is a function of the margin $h-a$ alone and every total contract of $h+a$ alone, so a game's full ladder of prices pins down the two marginal distributions and says nothing about how margin and total move together. The dependence between them has to come from somewhere else. In our construction it comes from the historical prior: the empirical score table carries the parity constraint (margin and total are always both odd or both even), the near-zero linear correlation between them (0.03 over 2015--2026) and the modest widening of the margin in high-scoring games, and the tilt of Section~\ref{sec:w0930} preserves all three because it only reweights cells. This is an assumption, stable across seasons in the data we have, not something the market confirms. It matters for any position whose payoff depends on both numbers at once, such as a spread and a total on the same game held together, and it could only be tested against contracts that pay on joint events (team totals, same-game parlays), which Kalshi does not list.
+
+\subsection{VaR and expected shortfall for binary contracts}\label{sec:binaryvar}
+
+
+For a binary contract none of the three traditional computations is needed, because the loss distribution can be written down. A position of $q$ contracts bought at price $p$ pays $q(1-p)$ if the event occurs and loses $qp$ otherwise. We define the loss as minus the profit, $L = -\text{P\&L}$, so a gain is a negative loss; if the probability of the event is $\pi$, $L$ takes the value $qp$ with probability $1-\pi$ and $-q(1-p)$ with probability $\pi$. With $\mathrm{VaR}_\alpha = \inf\{\ell : P(L\le \ell)\ge\alpha\}$ and $\mathrm{ES}_\alpha = \frac{1}{1-\alpha}\int_\alpha^1 \mathrm{VaR}_u\,du$,
+\[
+\mathrm{VaR}_\alpha = \begin{cases} qp & \text{if } \alpha > \pi,\\ -q(1-p) & \text{if } \alpha \le \pi,\end{cases}
+\qquad
+\mathrm{ES}_\alpha = \begin{cases} qp & \text{if } \alpha \ge \pi,\\[2pt] \dfrac{(1-\pi)\,qp - (\pi-\alpha)\,q(1-p)}{1-\alpha} & \text{if } \alpha < \pi.\end{cases}
+\]
+When the loss state is rarer than $1-\alpha$ (a likely event, $\pi>\alpha$), the $\alpha$-quantile of the loss is the gain state and VaR is negative; the tail average then mixes the loss state with part of the gain state. An earlier draft truncated gains at zero, $L^+=\max(L,0)$, which leaves VaR at $0$ rather than $-q(1-p)$ in that case and overstates ES by $(\pi-\alpha)\,q(1-p)/(1-\alpha)$; for the common case $\alpha\ge\pi$ the two conventions agree. So for a single contract the whole of risk measurement reduces to one number, $\pi$, which is also the fair price. For a portfolio of contracts on the same game the loss distribution is a sum over the joint outcomes of the game: with a probability table $p(h,a)$ over the final score, each position's payoff is a function of $(h,a)$, the portfolio profit and loss is their sum cell by cell, and VaR, ES, the worst case and the probability of loss are read directly from the resulting distribution with no simulation and no covariance matrix. This is the sense in which the pricing model and the risk model are the same object, and it is why the rest of this document is about building $p(h,a)$.
+{\color{red}\textbf{Amine comment:} Please define loss explicitly. The formulas treat gains as zero; I believe defining loss as minus profit can give different VaR and expected shortfall values?}
+
+{\color{blue}\textbf{Sai comment:} Fixed. Loss is now defined as $L=-\text{P\&L}$ and the VaR and ES formulas above are the signed-loss versions; the text notes where the earlier truncated-at-zero formulas differed (VaR of $0$ instead of $-q(1-p)$, and ES overstated by $(\pi-\alpha)\,q(1-p)/(1-\alpha)$, when $\pi>\alpha$).}
+
+\subsection{Which traditional risk tools carry over}\label{sec:tools}
+
+
+Traditional risk tools were built for instruments whose prices move continuously and have long histories. Sports prediction contracts pay exactly \$1 or \$0, last hours or days, and move in jumps. As a result the \emph{processes} of traditional risk management carry over, the \emph{measures} need adapting, and the \emph{statistical assumptions} no longer hold. Table~\ref{tab:tools} summarises our classification.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{2.5cm}p{5.0cm}p{7.6cm}}
+\toprule
+\textbf{Category} & \textbf{Tools} & \textbf{Why} \\
+\midrule
+Works as-is & Expected shortfall, scenario revaluation, SPAN margining, stress testing, limit frameworks, counterparty exposure & They work for any payoff shape. Because every possible outcome can be listed, they can be computed exactly. \\
+Needs adapting & Greeks, jump-to-default, basket correlation, netting, liquidity-adjusted risk, backtesting & The concepts are valid but must be reworked for binary, jump-driven payoffs, where dependence between contracts comes mostly from their structure rather than from statistics. \\
+Does not work & VaR as usually computed, covariance matrices, factor models, historical price simulation, continuous hedging & They assume smooth, normally distributed returns with long price histories, none of which exist here. \\
+New to prediction markets & Resolution-rule risk, cross-venue basis risk, integrity risk & These have no direct equivalent in traditional finance. \\
+\bottomrule
+\end{tabular}
+\caption{Traditional risk tools and how they transfer to binary sports contracts.}
+\label{tab:tools}
+\end{table}
+
+\subsubsection{Terms}
+
+\begin{description}[nosep,leftmargin=0pt,labelindent=0pt]
+\item[Value at Risk (VaR)] the loss that will not be exceeded at a given confidence level (e.g.\ 95\%). It ignores how large losses can be beyond that point.
+\item[Expected shortfall (ES)] the average loss in the worst outcomes beyond the VaR threshold, which captures the size of the tail.
+\item[Scenario revaluation] repricing every position under each possible scenario and adding up the profit and loss.
+\item[SPAN margining] setting collateral equal to the worst portfolio loss across a defined set of scenarios.
+\item[Stress testing] measuring losses under extreme but plausible events. \emph{Reverse} stress testing finds the events that would cause a given loss.
+\item[Greeks] sensitivities of a position's value. \emph{Delta} measures the response to price, \emph{gamma} how delta itself changes, and \emph{theta} the effect of time passing.
+\item[Basket correlation] risk in a product that depends on several events together (e.g.\ a parlay), driven by how those events are related.
+\item[Netting] offsetting gains and losses across related positions to find the true combined exposure.
+\item[Liquidity-adjusted risk] risk measured at the price one could actually exit at, rather than the mid-price.
+\item[Covariance matrix, factor model] statistical tools that estimate how assets move together from historical returns.
+\item[Counterparty exposure] potential loss if a counterparty or venue fails to pay.
+\item[Resolution-rule risk] loss from how a contract settles, e.g.\ voids, pushes, overtime or stat corrections.
+\item[Cross-venue basis risk] the ``same'' contract settling differently on two platforms.
+\item[Integrity risk] loss from insider information or match-fixing.
+\end{description}
+
+\subsubsection{Value at Risk}
+
+VaR answers one question: how much could I lose over a given period, at a given confidence level, under normal market conditions? Every VaR number has three parts: a loss amount, a time horizon and a confidence level. It is traditionally computed in one of three ways: parametrically, assuming a normal distribution of the underlying; by historical simulation; or by Monte Carlo. Its limitations are well known. It says nothing about the size of losses beyond the threshold, so two portfolios can have the same VaR while one loses ten times more in the worst 1\% of cases. It is not subadditive, so VaR$(A+B)$ can exceed VaR$(A)$ + VaR$(B)$, which makes diversification appear to increase risk; for this reason it is not a coherent risk measure in the sense of Artzner et al.~\cite{artzner1999}. And it relies on normal conditions, while correlations and volatilities shift sharply in a crisis.
+

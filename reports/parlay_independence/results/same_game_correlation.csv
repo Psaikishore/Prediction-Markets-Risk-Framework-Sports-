@@ -1,0 +1,4 @@
+pair,corr,n_games,se
+favourite wins & favourite covers,0.731,2782,0.019
+favourite wins & over,0.003,2782,0.019
+favourite covers & over,-0.015,2782,0.019
